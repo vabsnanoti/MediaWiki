@@ -1,0 +1,63 @@
+# Mysqldb
+---
+apiVersion: v1
+kind: Service
+metadata: 
+  labels: 
+    app: mysqldb
+  name: mysqldb
+spec: 
+  clusterIP: None
+  ports: 
+  - name: mysqldb
+    port: 3306
+    targetPort: 3306
+  selector: 
+    app: mysqldb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldb
+  labels:
+    app: mysqldb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysqldb
+  template:
+    metadata:
+      labels:
+        app: mysqldb
+    spec:
+      containers:
+      - name: mysqldb
+        image: mysql:latest
+        env:
+        envFrom:
+        - secretRef:
+            name: app-secret
+        - name: mysqldata
+          value: /var/lib/mysql/data/mysqldata
+        ports:
+        - containerPort: 3306
+          name: mysqldb
+        volumeMounts:
+        - name: mysqldb-data
+          mountPath: /var/lib/Mysql/data
+      volumes:
+      - name: mysqldb-data
+        persistentVolumeClaim:
+          claimName: mysqldb-pv-claim
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysqldb-pv-claim
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
